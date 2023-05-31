@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-focal as build
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
 
 ARG RUNNER_VERSION="2.304.0"
 ARG RUNNER_ARCH="x64"
