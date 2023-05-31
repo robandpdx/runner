@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as build
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
 
 # Replace value with the latest runner release version
 # source: https://github.com/actions/runner/releases
