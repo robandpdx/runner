@@ -52,7 +52,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v3
         with:
-          context: ./images
+          context: .
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
