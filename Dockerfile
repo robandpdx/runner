@@ -7,9 +7,9 @@ ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.3.2
 ARG DOCKER_VERSION=20.10.23
 
-RUN apt update -y && apt install curl unzip -y
+RUN apt update -y && apt install curl unzip wget -y
 
-RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN wget https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 RUN sudo dpkg -i packages-microsoft-prod.deb
 RUN rm packages-microsoft-prod.deb
 RUN sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-6.0
