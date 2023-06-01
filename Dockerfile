@@ -7,7 +7,7 @@ ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.3.2
 ARG DOCKER_VERSION=20.10.23
 
-RUN apt update -y && apt install curl unzip wget -y
+RUN apt update -y && apt install curl unzip wget dpkg -y
 
 WORKDIR /actions-runner
 
