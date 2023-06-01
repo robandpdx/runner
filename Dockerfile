@@ -9,12 +9,13 @@ ARG DOCKER_VERSION=20.10.23
 
 RUN apt update -y && apt install curl unzip wget -y
 
+WORKDIR /actions-runner
+
 RUN wget https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 RUN sudo dpkg -i packages-microsoft-prod.deb
 RUN rm packages-microsoft-prod.deb
 RUN sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-6.0
 
-WORKDIR /actions-runner
 RUN curl -f -L -o runner.tar.gz https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
     && tar xzf ./runner.tar.gz \
     && rm runner.tar.gz
