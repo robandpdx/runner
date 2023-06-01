@@ -1,5 +1,5 @@
 # FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
-FROM ubuntu:22.04 as build
+FROM ubuntu:22.04
 
 ARG UBUNTU_VERSION="22.04"
 ARG RUNNER_VERSION="2.304.0"
