@@ -1,4 +1,6 @@
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
+# FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
+ARG UBUNTU_VERSION="22.04"
+FROM ubuntu:${UBUNTU_VERSION} as build
 
 ARG RUNNER_VERSION="2.304.0"
 ARG RUNNER_ARCH="x64"
@@ -6,6 +8,11 @@ ARG RUNNER_CONTAINER_HOOKS_VERSION=0.3.2
 ARG DOCKER_VERSION=20.10.23
 
 RUN apt update -y && apt install curl unzip -y
+
+RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN sudo dpkg -i packages-microsoft-prod.deb
+RUN rm packages-microsoft-prod.deb
+RUN sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-6.0
 
 WORKDIR /actions-runner
 RUN curl -f -L -o runner.tar.gz https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
