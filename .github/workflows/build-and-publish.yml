@@ -6,7 +6,7 @@ on:
       runnerVersion:
         type: string
         description: Version of the runner being installed
-        default: 2.304.0
+        default: 2.306.0
 
 env:
   REGISTRY: ghcr.io
