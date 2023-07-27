@@ -9,6 +9,7 @@ ARG DOCKER_VERSION=20.10.23
 
 RUN apt update -y && apt install curl unzip wget dpkg ssh jq git -y
 
+
 WORKDIR /home/runner
 
 RUN wget https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -48,6 +49,7 @@ RUN adduser --disabled-password --gecos "" --uid 1001 runner \
     && echo "%sudo   ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers \
     && echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" >> /etc/sudoers
 
+RUN chown -R runner: /opt
 #WORKDIR /home/runner
 
 #COPY --chown=runner:docker --from=build /actions-runner .
