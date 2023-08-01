@@ -2,12 +2,17 @@
 FROM ubuntu:22.04
 
 ARG UBUNTU_VERSION="22.04"
-ARG RUNNER_VERSION="2.304.0"
+ARG RUNNER_VERSION="2.307.1"
 ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.3.2
 ARG DOCKER_VERSION=20.10.23
 
 RUN apt update -y && apt install curl unzip wget dpkg ssh jq git libyaml-dev build-essential libncurses5-dev libsqlite3-dev -y
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo apt update \
+    && sudo apt install gh -y
 
 
 WORKDIR /home/runner
