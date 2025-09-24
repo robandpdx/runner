@@ -5,8 +5,9 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG UBUNTU_VERSION="22.04"
 ARG RUNNER_VERSION="2.328.0"
-ARG RUNNER_CONTAINER_HOOKS_VERSION=0.3.2
-ARG DOCKER_VERSION=20.10.23
+ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+ARG DOCKER_VERSION=28.4.0
+ARG BUILDX_VERSION=0.28.0
 
 RUN apt update -y && apt install curl unzip wget dpkg ssh jq git git-lfs libyaml-dev build-essential libncurses5-dev libsqlite3-dev -y
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
