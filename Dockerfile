@@ -9,7 +9,7 @@ ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 ARG DOCKER_VERSION=28.4.0
 ARG BUILDX_VERSION=0.28.0
 
-RUN apt update -y && apt install curl unzip wget dpkg ssh jq git git-lfs libyaml-dev build-essential libncurses5-dev libsqlite3-dev -y
+RUN apt update -y && apt install curl unzip wget dpkg ssh jq git git-lfs libyaml-dev build-essential libncurses5-dev libsqlite3-dev libicu-dev -y
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=${TARGETARCH} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
