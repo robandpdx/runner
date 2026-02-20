@@ -1,20 +1,38 @@
-# FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-jammy as build
-FROM ubuntu:22.04
+# This Dockerfile is based on https://github.com/actions/runner/blob/main/images/Dockerfile
+FROM ubuntu:24.04
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG UBUNTU_VERSION="22.04"
-ARG RUNNER_VERSION="2.328.0"
+ARG UBUNTU_VERSION="24.04"
+ARG RUNNER_VERSION="2.331.0"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
-ARG DOCKER_VERSION=28.4.0
-ARG BUILDX_VERSION=0.28.0
+ARG DOCKER_VERSION=29.2.0
+ARG BUILDX_VERSION=0.31.1
 
-RUN apt update -y && apt install curl unzip wget dpkg ssh jq git git-lfs libyaml-dev build-essential libncurses5-dev libsqlite3-dev libicu-dev -y
+# Add packages to the list below as needed.
+RUN apt update -y && apt install sudo \
+                            lsb-release \
+                            gpg-agent \
+                            software-properties-common \
+                            curl \
+                            unzip \
+                            wget \
+                            dpkg \
+                            ssh \
+                            jq \
+                            git \
+                            git-lfs \
+                            libyaml-dev \
+                            build-essential \
+                            libncurses5-dev \
+                            libsqlite3-dev \
+                            libicu-dev -y --no-install-recommends
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=${TARGETARCH} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
     && apt update \
-    && apt install gh -y
+    && apt install gh -y \
+    && rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /home/runner
@@ -34,6 +52,10 @@ RUN curl -f -L -o runner-container-hooks.zip https://github.com/actions/runner-c
     && unzip ./runner-container-hooks.zip -d ./k8s \
     && rm runner-container-hooks.zip
 
+RUN curl -f -L -o runner-container-hooks.zip https://github.com/actions/runner-container-hooks/releases/download/v0.8.1/actions-runner-hooks-k8s-0.8.1.zip \
+    && unzip ./runner-container-hooks.zip -d ./k8s-novolume \
+    && rm runner-container-hooks.zip
+
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export DOCKER_ARCH=x86_64 ; fi \
     && if [ "$RUNNER_ARCH" = "arm64" ]; then export DOCKER_ARCH=aarch64 ; fi \
@@ -51,11 +73,6 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
-
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \
     && groupadd docker --gid 123 \
