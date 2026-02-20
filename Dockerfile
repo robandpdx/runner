@@ -40,7 +40,7 @@ WORKDIR /home/runner
 RUN wget https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 RUN dpkg -i packages-microsoft-prod.deb
 RUN rm packages-microsoft-prod.deb
-RUN apt-get update && apt-get install -y aspnetcore-runtime-6.0
+RUN apt-get update && apt-get install -y aspnetcore-runtime-8.0
 
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
