@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -26,10 +26,12 @@ jobs:
       - name: Compute image version
         id: image
         uses: actions/github-script@v8
+        env:
+          INPUT_RUNNER_VERSION: ${{ github.event.inputs.runnerVersion }}
         with:
           script: |
             const fs = require('fs');
-            const inputRunnerVersion = "${{ github.event.inputs.runnerVersion }}"
+            const inputRunnerVersion = process.env.INPUT_RUNNER_VERSION
             if (inputRunnerVersion) {
               console.log(`Using input runner version ${inputRunnerVersion}`)
               core.setOutput('version', inputRunnerVersion);
@@ -67,3 +69,24 @@ jobs:
             org.opencontainers.image.source=${{github.server_url}}/${{github.repository}}
             org.opencontainers.image.description=https://github.com/robandpdx/runner/releases/tag/v${{ steps.image.outputs.version }}
             org.opencontainers.image.licenses=MIT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.image.outputs.version }}
+          name: Runner Image v${{ steps.image.outputs.version }}
+          body: |
+            ## Runner Image v${{ steps.image.outputs.version }}
+
+            ### Docker Image
+            ```
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image.outputs.version }}
+            ```
+
+            **Image Digest:** `${{ steps.build-and-push.outputs.digest }}`
+
+            ### Tags
+            - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image.outputs.version }}`
+            - `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest`
+
+            Based on [actions/runner v${{ steps.image.outputs.version }}](https://github.com/actions/runner/releases/tag/v${{ steps.image.outputs.version }})
