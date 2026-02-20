@@ -1,0 +1,62 @@
+name: Check for new runner release
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'  # Monday at 3:17 AM UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Check for new release
+        id: check
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Get latest release from upstream repo
+            const { data: upstreamRelease } = await github.rest.repos.getLatestRelease({
+              owner: 'actions',
+              repo: 'runner'
+            });
+            const latestVersion = upstreamRelease.tag_name.replace(/^v/, '');
+            console.log(`Latest upstream version: ${latestVersion}`);
+
+            // Check if we already have a release for this version
+            try {
+              await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: `v${latestVersion}`
+              });
+              console.log(`Release v${latestVersion} already exists, skipping.`);
+              core.setOutput('new_release', 'false');
+            } catch (e) {
+              if (e.status === 404) {
+                console.log(`New release found: ${latestVersion}`);
+                core.setOutput('new_release', 'true');
+                core.setOutput('version', latestVersion);
+              } else {
+                throw e;
+              }
+            }
+
+      - name: Trigger build
+        if: steps.check.outputs.new_release == 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-and-publish.yml',
+              ref: 'main',
+              inputs: {
+                runnerVersion: '${{ steps.check.outputs.version }}'
+              }
+            });
+            console.log(`Triggered build for version ${{ steps.check.outputs.version }}`);
