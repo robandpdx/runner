@@ -69,6 +69,7 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
         "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TARGETARCH}" \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
+# Install the latest 3 Node.js LTS versions
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
     && mkdir -p /opt/hostedtoolcache/node \
@@ -78,6 +79,17 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
           | tar -xJ --strip-components=1 -C "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
         touch "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}.complete"; \
     done
+
+# Install latest uv into tool cache
+RUN export UV_ARCH=${TARGETARCH} \
+        && if [ "$UV_ARCH" = "amd64" ]; then export UV_ARCH=x86_64 ; fi \
+        && if [ "$UV_ARCH" = "arm64" ]; then export UV_ARCH=aarch64 ; fi \
+        && export UV_PLATFORM=unknown-linux-gnu \
+        && export UV_VERSION=$(curl -fsSL https://api.github.com/repos/astral-sh/uv/releases/latest | jq -r '.tag_name') \
+        && mkdir -p "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}" \
+        && curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}-${UV_PLATFORM}.tar.gz" \
+            | tar -xz --strip-components=1 -C "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}" "uv-${UV_ARCH}-${UV_PLATFORM}" \
+        && touch "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}.complete"
 
 
 #FROM mcr.microsoft.com/dotnet/runtime-deps:6.0
