@@ -8,6 +8,7 @@ ARG RUNNER_VERSION="2.331.0"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 ARG DOCKER_VERSION=29.2.0
 ARG BUILDX_VERSION=0.31.1
+ARG NODE_LTS_COUNT=3
 
 # Add packages to the list below as needed.
 RUN apt update -y && apt install sudo \
@@ -15,6 +16,7 @@ RUN apt update -y && apt install sudo \
                             gpg-agent \
                             software-properties-common \
                             curl \
+                            xz-utils \
                             unzip \
                             wget \
                             dpkg \
@@ -67,12 +69,24 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
         "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TARGETARCH}" \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
+RUN export RUNNER_ARCH=${TARGETARCH} \
+    && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
+    && mkdir -p /opt/hostedtoolcache/node \
+        && for NODE_VERSION in $(curl -fsSL https://nodejs.org/dist/index.json | jq -r --argjson count "${NODE_LTS_COUNT}" '([.[] | select(.lts != false) | .version | ltrimstr("v")]) as $versions | reduce $versions[] as $ver ([]; ($ver | split(".")[0]) as $major | if any(.[]; split(".")[0] == $major) then . else . + [$ver] end) | .[0:$count] | .[]'); do \
+        mkdir -p "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
+        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${RUNNER_ARCH}.tar.xz" \
+          | tar -xJ --strip-components=1 -C "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
+        touch "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}.complete"; \
+    done
+
 
 #FROM mcr.microsoft.com/dotnet/runtime-deps:6.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
+ENV AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
+ENV RUNNER_TOOL_CACHE=/opt/hostedtoolcache
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \
     && groupadd docker --gid 123 \
