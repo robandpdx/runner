@@ -8,7 +8,8 @@ ARG RUNNER_VERSION="2.331.0"
 ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 ARG DOCKER_VERSION=29.2.0
 ARG BUILDX_VERSION=0.31.1
-ARG NODE_LTS_COUNT=3
+ARG NODE_VERSIONS="18 19 20 21 22 23 24 25"
+ARG PYTHON_VERSIONS="3.10 3.11 3.12 3.13 3.14"
 
 # Add packages to the list below as needed.
 RUN apt update -y && apt install sudo \
@@ -69,16 +70,20 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
         "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TARGETARCH}" \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
-# Install the latest 3 Node.js LTS versions
+# Install listed Node.js major versions (latest patch per major)
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
-    && mkdir -p /opt/hostedtoolcache/node \
-        && for NODE_VERSION in $(curl -fsSL https://nodejs.org/dist/index.json | jq -r --argjson count "${NODE_LTS_COUNT}" '([.[] | select(.lts != false) | .version | ltrimstr("v")]) as $versions | reduce $versions[] as $ver ([]; ($ver | split(".")[0]) as $major | if any(.[]; split(".")[0] == $major) then . else . + [$ver] end) | .[0:$count] | .[]'); do \
-        mkdir -p "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
-        curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${RUNNER_ARCH}.tar.xz" \
-          | tar -xJ --strip-components=1 -C "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
-        touch "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}.complete"; \
-    done
+        && mkdir -p /opt/hostedtoolcache/node \
+        && curl -fsSL https://nodejs.org/dist/index.json -o /tmp/node-index.json \
+        && for NODE_MAJOR in ${NODE_VERSIONS}; do \
+                NODE_VERSION=$(jq -r --arg prefix "${NODE_MAJOR}." '[.[] | .version | ltrimstr("v") | select(startswith($prefix))][0]' /tmp/node-index.json); \
+                if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then echo "Unable to resolve Node.js major ${NODE_MAJOR}"; exit 1; fi; \
+                mkdir -p "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
+                curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${RUNNER_ARCH}.tar.xz" \
+                    | tar -xJ --strip-components=1 -C "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}"; \
+                touch "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}.complete"; \
+        done \
+        && rm -f /tmp/node-index.json
 
 # Install latest uv into tool cache
 RUN export UV_ARCH=${TARGETARCH} \
@@ -90,6 +95,24 @@ RUN export UV_ARCH=${TARGETARCH} \
         && curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}-${UV_PLATFORM}.tar.gz" \
             | tar -xz --strip-components=1 -C "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}" "uv-${UV_ARCH}-${UV_PLATFORM}" \
         && touch "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}.complete"
+
+# Install Python versions into tool cache
+RUN export RUNNER_ARCH=${TARGETARCH} \
+    && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
+    && export UV_BIN=$(find /opt/hostedtoolcache/uv -type f -name uv | head -n 1) \
+    && test -n "$UV_BIN" \
+    && mkdir -p /opt/hostedtoolcache/Python \
+    && for PYTHON_VERSION in ${PYTHON_VERSIONS}; do \
+        "$UV_BIN" python install "$PYTHON_VERSION"; \
+        PYTHON_BIN=$("$UV_BIN" python find "$PYTHON_VERSION"); \
+        PYTHON_ROOT=$(cd "$(dirname "$PYTHON_BIN")/.." && pwd); \
+        FULL_VERSION=$("$PYTHON_BIN" -c "import sys; print('.'.join(map(str, sys.version_info[:3])))"); \
+        TARGET_DIR="/opt/hostedtoolcache/Python/${FULL_VERSION}/${RUNNER_ARCH}"; \
+        mkdir -p "$TARGET_DIR"; \
+        cp -a "${PYTHON_ROOT}/." "$TARGET_DIR/"; \
+        if [ ! -x "$TARGET_DIR/bin/python" ] && [ -x "$TARGET_DIR/bin/python3" ]; then ln -sf python3 "$TARGET_DIR/bin/python"; fi; \
+        touch "/opt/hostedtoolcache/Python/${FULL_VERSION}/${RUNNER_ARCH}.complete"; \
+    done
 
 
 #FROM mcr.microsoft.com/dotnet/runtime-deps:6.0
