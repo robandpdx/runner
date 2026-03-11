@@ -10,6 +10,7 @@ ARG DOCKER_VERSION=29.2.0
 ARG BUILDX_VERSION=0.31.1
 ARG NODE_VERSIONS="18 19 20 21 22 23 24 25"
 ARG PYTHON_VERSIONS="3.10 3.11 3.12 3.13 3.14"
+ARG UV_VERSION="0.10.9"
 
 # Add packages to the list below as needed.
 RUN apt update -y && apt install sudo \
@@ -85,12 +86,11 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
         done \
         && rm -f /tmp/node-index.json
 
-# Install latest uv into tool cache
+# Install uv into tool cache
 RUN export UV_ARCH=${TARGETARCH} \
         && if [ "$UV_ARCH" = "amd64" ]; then export UV_ARCH=x86_64 ; fi \
         && if [ "$UV_ARCH" = "arm64" ]; then export UV_ARCH=aarch64 ; fi \
         && export UV_PLATFORM=unknown-linux-gnu \
-        && export UV_VERSION=$(curl -fsSL https://api.github.com/repos/astral-sh/uv/releases/latest | jq -r '.tag_name') \
         && mkdir -p "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}" \
         && curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}-${UV_PLATFORM}.tar.gz" \
             | tar -xz --strip-components=1 -C "/opt/hostedtoolcache/uv/${UV_VERSION}/${UV_ARCH}" "uv-${UV_ARCH}-${UV_PLATFORM}" \
