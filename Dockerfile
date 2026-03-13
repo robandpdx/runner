@@ -93,13 +93,14 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
     && NODE_FOR_DEFAULT=$(ls -1 /opt/hostedtoolcache/node | sort -V | grep -E "^${DEFAULT_NODE_MAJOR}\." | tail -n 1) \
     && test -n "$NODE_FOR_DEFAULT" \
     && NODE_BIN_DIR="/opt/hostedtoolcache/node/${NODE_FOR_DEFAULT}/${RUNNER_ARCH}/bin" \
+    && mkdir -p /opt/runner-tools/bin \
     && test -x "$NODE_BIN_DIR/node" \
-    && ln -sf "$NODE_BIN_DIR/node" /usr/bin/node \
-    && ln -sf "$NODE_BIN_DIR/npm" /usr/bin/npm \
-    && ln -sf "$NODE_BIN_DIR/npx" /usr/bin/npx \
+    && ln -sf "$NODE_BIN_DIR/node" /usr/local/bin/node \
+    && ln -sf "$NODE_BIN_DIR/npm" /usr/local/bin/npm \
+    && ln -sf "$NODE_BIN_DIR/npx" /usr/local/bin/npx \
     && test -x "$NODE_BIN_DIR/corepack" \
-    && ln -sf "$NODE_BIN_DIR/corepack" /usr/bin/corepack \
-    && corepack --version
+    && ln -sf "$NODE_BIN_DIR/corepack" /opt/runner-tools/bin/corepack \
+    && /opt/runner-tools/bin/corepack --version
 
 # Install uv into tool cache
 RUN export UV_ARCH=${TARGETARCH} \
@@ -137,7 +138,7 @@ ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 ENV AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
 ENV RUNNER_TOOL_CACHE=/opt/hostedtoolcache
-ENV PATH=/usr/local/bin:/usr/bin:/bin:${PATH}
+ENV PATH=/opt/runner-tools/bin:/usr/bin:/bin:${PATH}
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \
     && groupadd docker --gid 123 \
