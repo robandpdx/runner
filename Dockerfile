@@ -99,6 +99,7 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
     && ln -sf "$NODE_BIN_DIR/npx" /usr/local/bin/npx \
     && if [ -x "$NODE_BIN_DIR/corepack" ]; then ln -sf "$NODE_BIN_DIR/corepack" /usr/local/bin/corepack; fi \
     && PATH="$NODE_BIN_DIR:$PATH" npm install -g "pnpm@${PNPM_VERSION}" \
+    && ln -sf "$NODE_BIN_DIR/pnpm" /usr/local/bin/pnpm \
     && pnpm --version | grep -Fx "${PNPM_VERSION}"
 
 # Install uv into tool cache
