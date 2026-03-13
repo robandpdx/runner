@@ -9,6 +9,7 @@ ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
 ARG DOCKER_VERSION=29.2.0
 ARG BUILDX_VERSION=0.31.1
 ARG NODE_VERSIONS="18 19 20 21 22 23 24 25"
+ARG PNPM_VERSION="10.20.0"
 ARG PYTHON_VERSIONS="3.10 3.11 3.12 3.13 3.14"
 ARG UV_VERSION="0.10.9"
 
@@ -85,6 +86,20 @@ RUN export RUNNER_ARCH=${TARGETARCH} \
                 touch "/opt/hostedtoolcache/node/${NODE_VERSION}/${RUNNER_ARCH}.complete"; \
         done \
         && rm -f /tmp/node-index.json
+
+# Install pinned pnpm using the newest cached Node.js
+RUN export RUNNER_ARCH=${TARGETARCH} \
+    && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
+    && NODE_FOR_PNPM=$(ls -1 /opt/hostedtoolcache/node | sort -V | tail -n 1) \
+    && test -n "$NODE_FOR_PNPM" \
+    && NODE_BIN_DIR="/opt/hostedtoolcache/node/${NODE_FOR_PNPM}/${RUNNER_ARCH}/bin" \
+    && test -x "$NODE_BIN_DIR/node" \
+    && ln -sf "$NODE_BIN_DIR/node" /usr/local/bin/node \
+    && ln -sf "$NODE_BIN_DIR/npm" /usr/local/bin/npm \
+    && ln -sf "$NODE_BIN_DIR/npx" /usr/local/bin/npx \
+    && if [ -x "$NODE_BIN_DIR/corepack" ]; then ln -sf "$NODE_BIN_DIR/corepack" /usr/local/bin/corepack; fi \
+    && PATH="$NODE_BIN_DIR:$PATH" npm install -g "pnpm@${PNPM_VERSION}" \
+    && pnpm --version | grep -Fx "${PNPM_VERSION}"
 
 # Install uv into tool cache
 RUN export UV_ARCH=${TARGETARCH} \
