@@ -65,6 +65,8 @@ jobs:
           build-args: |
             RUNNER_VERSION=${{ steps.image.outputs.version }}
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           labels: |
             org.opencontainers.image.source=${{github.server_url}}/${{github.repository}}
             org.opencontainers.image.description=https://github.com/robandpdx/runner/releases/tag/v${{ steps.image.outputs.version }}
